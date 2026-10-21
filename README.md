@@ -2,6 +2,8 @@
 
 > Academic prototype: PatchCore-based industrial anomaly detection with a separate CLIP zero-shot image-classification comparison.
 
+[![Live Demo](https://img.shields.io/badge/Live-Demo-orange?style=flat&logo=huggingface&logoColor=white)](https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection) [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://www.python.org/) [![Project Report](https://img.shields.io/badge/Project-Report-green?style=flat)](docs/PROJECT_REPORT.md) [![Model Comparison](https://img.shields.io/badge/Model-Comparison-purple?style=flat)](docs/model_comparison.md)
+
 [Live Demo](https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection) · [Project Report](docs/PROJECT_REPORT.md) · [Model Comparison](docs/model_comparison.md)
 
 ## Overview
