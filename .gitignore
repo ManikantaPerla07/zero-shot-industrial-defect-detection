@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset
+data/raw/
+data/processed/
+data/synthetic/
+
+# Model weights
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Outputs: exclude large model artifacts, keep evaluation reports
+outputs/*
+!outputs/evaluation/
+outputs/evaluation/*
+!outputs/evaluation/metrics.json
+!outputs/evaluation/clip_metrics.json
+!outputs/evaluation/model_comparison.csv
+!outputs/evaluation/patchcore_bottle_results.csv
+!outputs/evaluation/clip_bottle_results.csv
+
+# Generated inference and training results
+results/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets
+.env

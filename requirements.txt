@@ -1,0 +1,13 @@
+torch
+torchvision
+transformers
+opencv-python
+numpy
+pillow
+scikit-learn
+matplotlib
+pandas
+pyyaml
+tqdm
+gradio
+anomalib

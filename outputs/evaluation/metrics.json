@@ -1,0 +1,9 @@
+{
+    "images_evaluated": 83,
+    "image_accuracy": 0.9879518072289156,
+    "image_precision": 1.0,
+    "image_recall": 0.9841269841269841,
+    "image_f1_score": 0.992,
+    "image_roc_auc": 1.0,
+    "pixel_roc_auc": 0.9856265225028394
+}

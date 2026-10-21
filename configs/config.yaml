@@ -1,0 +1,16 @@
+project:
+  name: zero-shot-industrial-defect-detection
+  version: 0.1.0
+  seed: 42
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  checkpoints: checkpoints
+  outputs: outputs
+
+device:
+  use_cuda: true
+
+image:
+  size: 224

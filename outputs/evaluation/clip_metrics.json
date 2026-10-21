@@ -1,0 +1,10 @@
+{
+    "model": "openai/clip-vit-base-patch32",
+    "evaluation_type": "zero-shot image-level classification",
+    "images_evaluated": 83,
+    "accuracy": 0.7590361445783133,
+    "precision": 0.7590361445783133,
+    "recall": 1.0,
+    "f1_score": 0.863013698630137,
+    "roc_auc": 0.9357142857142857
+}
