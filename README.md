@@ -285,3 +285,10 @@ The PatchCore inference pipeline, Gradio interface, CLIP comparison experiment, 
 - [OpenAI CLIP](https://github.com/openai/CLIP)
 - [Gradio](https://www.gradio.app/)
 
+## 🚀 Live Demo
+
+**Try the deployed application:** [Industrial Defect Detection on Hugging Face](https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection)
+
+Upload a bottle image to view the PatchCore anomaly score, predicted result, and heatmap overlay.
+
+**Scope:** The current model has been evaluated on the bottle category of the MVTec AD dataset. Other product categories have not been validated.
