@@ -1,294 +1,163 @@
 # Zero-Shot Industrial Defect Detection Using Foundation Vision Models
 
-An industrial visual inspection project that detects anomalies in bottle images using **PatchCore** and compares its performance with **CLIP zero-shot classification**. The application generates anomaly heatmaps to help visualize potentially defective regions.
+> Academic prototype: PatchCore-based industrial anomaly detection with a separate CLIP zero-shot image-classification comparison.
+
+[Live Demo](https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection) · [Project Report](docs/PROJECT_REPORT.md) · [Model Comparison](docs/model_comparison.md)
 
 ## Overview
 
-Manual quality inspection can be time-consuming and inconsistent. This project explores pretrained vision models for identifying abnormal patterns in industrial products.
+This project explores visual quality inspection for industrial bottles. The primary application uses PatchCore to flag abnormal images and visualize suspicious regions with an anomaly heatmap. A separate experiment evaluates CLIP using normal/defect text prompts for zero-shot image-level classification.
 
-The current implementation focuses on the bottle category of the MVTec Anomaly Detection (MVTec AD) dataset. It uses PatchCore for anomaly detection and localization, alongside CLIP for zero-shot image-level classification.
+**Important scope distinction:** PatchCore is the deployed anomaly-detection model and uses normal bottle training images. CLIP is a zero-shot comparison experiment; it is not the heatmap/localization model in the current app.
+
+## Live Application
+
+**Try it:** https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection
+
+The public Gradio app is hosted on Hugging Face Spaces with ZeroGPU. The application has been manually tested with one defective and one normal bottle example:
+
+- Defective example: `Potential defect detected`, anomaly score `0.9515`.
+- Normal example: `Likely normal`, anomaly score `0.2298`.
+
+Scores are uncalibrated model scores, not probabilities. The heatmap is min-max normalized separately for each image, so its warm colours represent relatively higher values within that image and should not be compared directly across images.
 
 ## Key Features
 
-- Upload an industrial product image through a Gradio web interface.
-- Detect potential anomalies using a pretrained-feature-based PatchCore model.
-- Generate anomaly heatmaps to visualize suspicious regions.
-- Display an image-level anomaly score and predicted result.
-- Compare PatchCore against CLIP zero-shot image classification.
-- Evaluate model performance using accuracy, precision, recall, F1-score, and ROC-AUC.
-- Save per-image predictions and evaluation reports.
+- Upload an image through a Gradio interface.
+- Get PatchCore's image-level anomaly score and prediction.
+- Visualize the anomaly map as a heatmap overlay.
+- Evaluate image-level metrics and pixel-level ROC-AUC for PatchCore.
+- Compare PatchCore with CLIP zero-shot image-level classification.
+- Save per-image predictions, metric JSON files, and a Markdown comparison report.
 
-## Technology Stack
+## Methodology
 
-- **Language:** Python
-- **Deep Learning:** PyTorch
-- **Anomaly Detection:** Anomalib, PatchCore
-- **Foundation Vision Model:** CLIP (`openai/clip-vit-base-patch32`)
-- **Image Processing:** OpenCV, Pillow, NumPy
-- **Evaluation:** scikit-learn
-- **Web Interface:** Gradio
-- **Configuration:** YAML
+### PatchCore
 
-## System Architecture
+PatchCore builds a memory bank of representative features from normal training images. During inference, feature distances identify patches that differ from the normal reference. This implementation uses:
 
-```text
-MVTec AD Bottle Dataset
-          |
-          v
-  Image Preprocessing
-          |
-          +-----------------------------+
-          |                             |
-          v                             v
-  PatchCore Model                 CLIP Model
-  Anomaly Detection               Zero-Shot Classification
-          |                             |
-          v                             v
-  Anomaly Score                   Image-Level Score
-  Anomaly Heatmap                 Normal/Defective Label
-          |                             |
-          +--------------+--------------+
-                         |
-                         v
-             Evaluation and Comparison
-                         |
-                         v
-              Results and Web Interface
-```
+- Backbone: `wide_resnet50_2`
+- Feature layers: `layer2` and `layer3`
+- Coreset sampling ratio: `0.1`
+- Nearest neighbours: `9`
+- Precision: FP32
+
+### CLIP zero-shot comparison
+
+The experiment uses `openai/clip-vit-base-patch32` and text-prompt groups describing normal and defective bottles. It compares mean image-text similarity scores to generate an image-level label and relative defect score. No bottle-specific CLIP fine-tuning was performed.
 
 ## Dataset
 
-This project uses the **bottle category** of the MVTec Anomaly Detection (MVTec AD) dataset.
+The experiment uses only the bottle category from the [MVTec AD dataset](https://www.mvtec.com/research-teaching/datasets/mvtec-ad). The category contains defect-free training images, normal and defective test images, and ground-truth masks for defects.
 
-The dataset includes normal training images, normal test images, defective test images, and ground-truth masks for defective regions.
+| Split / category | Images | Label |
+|---|---:|---|
+| `train/good` | 209 | Normal training images |
+| `test/good` | 20 | Normal test images |
+| `test/broken_large` | 20 | Defective |
+| `test/broken_small` | 22 | Defective |
+| `test/contamination` | 21 | Defective |
+| **Total test set** | **83** | **20 normal, 63 defective** |
 
-The local dataset directory is:
-
-```text
-data/raw/mvtec_anomaly_detection/bottle/
-├── train/
-│   └── good/
-├── test/
-│   ├── good/
-│   ├── broken_large/
-│   ├── broken_small/
-│   └── contamination/
-└── ground_truth/
-```
-
-Only normal bottle images are used to build the PatchCore memory bank. Test images are used for evaluation.
-
-Dataset source: [MVTec Anomaly Detection](https://www.mvtec.com/company/research/datasets/mvtec-ad)
-
-Please follow the dataset's applicable licence and terms when downloading or redistributing it.
-
-## Models
-
-### 1. PatchCore
-
-PatchCore is the primary anomaly-detection model in the current implementation. It uses pretrained Wide ResNet-50-2 features from `layer2` and `layer3` to identify deviations from normal training examples.
-
-Current configuration:
-
-- Backbone: `wide_resnet50_2`
-- Feature layers: `layer2`, `layer3`
-- Coreset sampling ratio: `0.1`
-- Number of nearest neighbors: `9`
-- Precision: FP32
-
-The model generates an image-level anomaly score and an anomaly map for localization.
-
-### 2. CLIP Zero-Shot Classification
-
-CLIP compares image features with text descriptions of normal and defective bottles without training on the bottle test images.
-
-The current experiment uses the pretrained `openai/clip-vit-base-patch32` model and multiple text prompts for both classes.
-
-**Important distinction:** CLIP is currently evaluated for image-level classification only. Pixel-level defect localization is implemented and evaluated for PatchCore, not for this CLIP experiment.
+The dataset is not included in this repository. Follow MVTec AD's licence terms; the dataset is provided under CC BY-NC-SA 4.0 and is not for commercial use.
 
 ## Initial Evaluation Results
 
-Both models were evaluated on the same 83 bottle test images.
+Both scripts evaluated the same 83 bottle test images. These are project-script results for this subset, not official benchmark results.
 
-| Metric | PatchCore | CLIP Zero-Shot |
+| Metric | PatchCore | CLIP zero-shot |
 |---|---:|---:|
 | Test images | 83 | 83 |
-| Accuracy | 98.80% | 75.90% |
-| Precision | 100.00% | 75.90% |
-| Recall | 98.41% | 100.00% |
-| F1-score | 99.20% | 86.30% |
-| Image ROC-AUC | 100.00% | 93.57% |
-| Pixel ROC-AUC | 98.56% | Not evaluated |
+| Accuracy | **98.80%** | 75.90% |
+| Precision | **100.00%** | 75.90% |
+| Recall | 98.41% | **100.00%** |
+| F1-score | **99.20%** | 86.30% |
+| Image ROC-AUC | **100.00%** | 93.57% |
+| Pixel ROC-AUC | **98.56%** | Not evaluated |
 
-These are initial results from the project's local evaluation scripts, not official benchmark results or evidence of generalization to other industrial product categories.
+### Interpretation and limitations
 
-### Interpretation
+- At the current Anomalib prediction threshold, PatchCore classified 82 of 83 test images correctly: 62 of 63 defects and all 20 normal bottles.
+- PatchCore's reported image ROC-AUC of 1.0000 reflects score ranking on this small subset; it does not mean every threshold produces perfect classification.
+- CLIP classified all 83 images as defective. This explains its 100% recall and 75.90% accuracy, with 20 false positives. Prompt and decision-rule refinement is required.
+- Pixel ROC-AUC is an aggregate over resized anomaly maps and masks; it is not a per-category score.
+- Only the bottle category was evaluated. Performance on other products and real manufacturing conditions has not been validated.
 
-- PatchCore performed strongly on this particular bottle test set.
-- CLIP obtained an image ROC-AUC of 93.57%, indicating useful ranking performance in this evaluation.
-- The current CLIP classification rule predicted every test image as defective. Its decision threshold and prompt design require further investigation.
-- Pixel-level ROC-AUC was calculated for PatchCore using anomaly maps and available ground-truth masks.
-- The anomaly score is not a calibrated probability of a defect.
+## Technology Stack
+
+- Python, PyTorch, torchvision
+- Anomalib / PatchCore
+- Hugging Face Transformers / CLIP
+- OpenCV, NumPy, Pillow
+- scikit-learn
+- Gradio
+- Hugging Face Spaces ZeroGPU for public inference
 
 ## Project Structure
 
 ```text
 zero-shot-industrial-defect-detection/
 ├── app.py
+├── train_patchcore.py
 ├── evaluate_model.py
 ├── compare_clip.py
 ├── compare_results.py
-├── configs/
-│   └── config.yaml
-├── data/
-│   ├── raw/
-│   └── processed/
+├── configs/config.yaml
 ├── docs/
+│   ├── PROJECT_REPORT.md
 │   └── model_comparison.md
-├── outputs/
-│   ├── evaluation/
-│   │   ├── metrics.json
-│   │   ├── clip_metrics.json
-│   │   ├── patchcore_bottle_results.csv
-│   │   ├── clip_bottle_results.csv
-│   │   └── model_comparison.csv
-│   └── patchcore_bottle/
-├── src/
-│   ├── data/
-│   ├── evaluation/
-│   ├── explainability/
-│   ├── inference/
-│   ├── models/
-│   ├── utils/
-│   └── visualization/
-├── tests/
+├── outputs/evaluation/
+│   ├── patchcore_bottle_results.csv
+│   ├── clip_bottle_results.csv
+│   ├── metrics.json
+│   ├── clip_metrics.json
+│   └── model_comparison.csv
 ├── requirements.txt
-└── README.md
+└── src/utils/
 ```
 
-The trained checkpoint and dataset are stored locally. They must be made available separately if someone is to reproduce inference from a fresh clone.
+The trained checkpoint is stored with the Hugging Face Space via Git LFS, not in this GitHub source repository. The dataset and the local virtual environment are also excluded from Git.
 
-## Installation and Setup
+## Run Locally
 
-### 1. Clone the repository
-
-```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd zero-shot-industrial-defect-detection
-```
-
-Replace `<YOUR_GITHUB_REPOSITORY_URL>` with the actual repository URL after publishing the project.
-
-### 2. Create a virtual environment
-
-Python 3.11 is the version used during local development.
-
-```bash
-python -m venv .venv
-```
-
-On Windows PowerShell:
+Tested locally with Python 3.11.
 
 ```powershell
+git clone https://github.com/ManikantaPerla07/zero-shot-industrial-defect-detection.git
+cd zero-shot-industrial-defect-detection
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-The dependency file will be finalized as part of project packaging.
-
-### 4. Make the dataset and checkpoint available
-
-Place the bottle dataset in:
-
-```text
-data/raw/mvtec_anomaly_detection/bottle/
-```
-
-Place the trained PatchCore checkpoint at the path expected by the application:
-
-```text
-outputs/patchcore_bottle/Patchcore/MVTecAD/bottle/v0/weights/lightning/model.ckpt
-```
-
-The checkpoint is required to run PatchCore inference without retraining.
-
-## Run the Application
-
-Start the Gradio application:
-
-```bash
 python app.py
 ```
 
-Open the local URL printed by Gradio, normally:
+Open the local URL printed by Gradio, usually `http://127.0.0.1:7860`.
 
-```text
-http://127.0.0.1:7860
-```
+To reproduce evaluation, make the bottle dataset and trained checkpoint available at the expected paths, then run:
 
-Upload a bottle image and select **Analyze Image** to view the prediction, anomaly score, and heatmap.
-
-## Run Evaluation
-
-Evaluate PatchCore on the bottle test dataset:
-
-```bash
+```powershell
 python evaluate_model.py
-```
-
-Run CLIP zero-shot classification:
-
-```bash
 python compare_clip.py
-```
-
-Generate the combined comparison report:
-
-```bash
 python compare_results.py
 ```
 
-Evaluation files are written to `outputs/evaluation/`. The Markdown comparison report is saved to `docs/model_comparison.md`.
+Outputs are written to `outputs/evaluation/`. Because dependency versions are not fully pinned, a fresh environment may resolve different compatible package versions.
 
-## Current Limitations
+## Limitations and Future Work
 
-- Evaluation is restricted to the bottle category and 83 test images.
-- The current PatchCore checkpoint and inference pipeline have been tested locally on CPU.
-- CLIP uses image-level classification in the current implementation; it does not produce the pixel-level defect heatmaps used by PatchCore.
-- The CLIP classification threshold and text prompts need further validation.
-- Results may differ on other product types, acquisition conditions, or industrial datasets.
-- The current metrics are preliminary and should be checked against a reproducible, clearly documented evaluation protocol before being reported as benchmark claims.
-- Public deployment requires the model checkpoint, dependencies, and dataset-access arrangements to be handled appropriately.
+- Validate additional product categories and acquisition conditions.
+- Tune CLIP prompt templates and evaluate a decision threshold on a separate validation split.
+- Report per-defect-category results and threshold-independent vs threshold-dependent metrics separately.
+- Investigate zero-shot anomaly-localization methods for a more direct localization comparison.
+- Pin package versions and add automated regression tests.
 
-## Future Improvements
+## References
 
-- Investigate CLIP prompt design and classification thresholds.
-- Improve model evaluation and add per-defect-category analysis.
-- Add more industrial product categories.
-- Improve the user interface and result visualization.
-- Add automated tests and reproducible environment setup.
-- Publish the application using a suitable hosting platform.
+1. Bergmann et al., “MVTec AD—A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection,” CVPR 2019. https://openaccess.thecvf.com/content_CVPR_2019/html/Bergmann_MVTec_AD_--_A_Comprehensive_Real-World_Dataset_for_Unsupervised_Anomaly_Detection_CVPR_2019_paper.html
+2. Roth et al., “Towards Total Recall in Industrial Anomaly Detection,” CVPR 2022. https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html
+3. Radford et al., “Learning Transferable Visual Models From Natural Language Supervision,” ICML 2021. https://proceedings.mlr.press/v139/radford21a.html
+4. Anomalib PatchCore documentation. https://anomalib.readthedocs.io/en/stable/markdown/guides/reference/models/image/patchcore.html
 
 ## Project Status
 
-The PatchCore inference pipeline, Gradio interface, CLIP comparison experiment, and initial evaluation scripts have been implemented. Documentation, reproducibility checks, repository packaging, and deployment remain in progress.
-
-## Acknowledgements
-
-- [MVTec Anomaly Detection Dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)
-- [Anomalib](https://github.com/open-edge-platform/anomalib)
-- [OpenAI CLIP](https://github.com/openai/CLIP)
-- [Gradio](https://www.gradio.app/)
-
-## 🚀 Live Demo
-
-**Try the deployed application:** [Industrial Defect Detection on Hugging Face](https://huggingface.co/spaces/Manikantaperla/zero-shot-industrial-defect-detection)
-
-Upload a bottle image to view the PatchCore anomaly score, predicted result, and heatmap overlay.
-
-**Scope:** The current model has been evaluated on the bottle category of the MVTec AD dataset. Other product categories have not been validated.
+The current-scope prototype has been implemented, evaluated on the bottle subset, documented, published on GitHub, and deployed as a public Hugging Face Space. Results should be presented with the category and evaluation limitations stated above.
